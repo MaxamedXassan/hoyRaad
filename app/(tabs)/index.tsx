@@ -1,98 +1,192 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import HouseCard from '../../components/HouseCard';
+import { supabase } from '../../lib/supabase';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    const [houses, setHouses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    const fetchHouses = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('houses')
+                .select(`
+                  *,
+                  house_images (
+                    image_url
+                  )
+                `)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (data) {
+                const formattedData = data.map((house: any) => ({
+                    ...house,
+                    display_image: house.house_images?.[0]?.image_url || 'https://via.placeholder.com/400x300?text=No+Image'
+                }));
+                setHouses(formattedData);
+            }
+        } catch (error: any) {
+            console.error("Error fetching houses:", error.message);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchHouses();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchHouses();
+    };
+
+    // Filtered list based on search
+    const filteredHouses = houses.filter(h => 
+        h.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        h.address.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color="#1A237E" />
+            </View>
+        );
+    }
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <FlatList
+                data={filteredHouses}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <HouseCard 
+                        house={item} 
+                        onPress={() => router.push(`./house-details/${item.id}`)}
+                    />
+                )}
+                contentContainerStyle={{ padding: 20 }}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+                ListHeaderComponent={
+                    <View style={styles.headerSection}>
+                        {/* 1. Header Text */}
+                        <View style={styles.headerTextContainer}>
+                            <View>
+                                <Text style={styles.welcomeText}>Waad Heli karta</Text>
+                                <Text style={styles.mainTitle}>Guriga Aad Jeceshahay</Text>
+                            </View>
+                            <TouchableOpacity style={styles.notificationBtn}>
+                                <Ionicons name="notifications-outline" size={24} color="#1A237E" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* 2. Pro Search Bar */}
+                        <View style={styles.searchSection}>
+                            <View style={styles.searchBar}>
+                                <Ionicons name="search-outline" size={20} color="#999" style={styles.searchIcon} />
+                                <TextInput 
+                                    placeholder="Raadi guri ama xaafad..."
+                                    style={styles.searchInput}
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                />
+                            </View>
+                            <TouchableOpacity style={styles.filterBtn}>
+                                <Ionicons name="options-outline" size={24} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+                        
+                        <Text style={styles.sectionLabel}>Guryihii ugu dambeeyay</Text>
+                    </View>
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="search-outline" size={60} color="#DDD" />
+                        <Text style={styles.emptyText}>Ma jiraan guryo u dhigma raadintaada.</Text>
+                    </View>
+                }
+            />
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+    container: { flex: 1, backgroundColor: '#F8F9FD' },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    headerSection: { marginBottom: 15 },
+    headerTextContainer: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: 25,
+        marginTop: 10
+    },
+    welcomeText: { fontSize: 16, color: '#777', fontWeight: '500' },
+    mainTitle: { fontSize: 26, fontWeight: 'bold', color: '#1A237E' },
+    notificationBtn: { 
+        backgroundColor: '#fff', 
+        padding: 10, 
+        borderRadius: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4
+    },
+    searchSection: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        marginBottom: 20 
+    },
+    searchBar: { 
+        flex: 1, 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        backgroundColor: '#fff', 
+        height: 55, 
+        borderRadius: 15, 
+        paddingHorizontal: 15,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5
+    },
+    searchIcon: { marginRight: 10 },
+    searchInput: { flex: 1, fontSize: 16, color: '#333' },
+    filterBtn: { 
+        backgroundColor: '#1A237E', 
+        width: 55, 
+        height: 55, 
+        borderRadius: 15, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        marginLeft: 12,
+        elevation: 4
+    },
+    sectionLabel: { fontSize: 18, fontWeight: 'bold', color: '#1A237E', marginTop: 10 },
+    emptyContainer: { alignItems: 'center', marginTop: 50 },
+    emptyText: { color: '#999', marginTop: 10, fontSize: 16 }
 });
