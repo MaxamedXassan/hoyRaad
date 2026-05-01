@@ -31,21 +31,20 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    // Sug inta initialized ay noqonayso true (Loading-ka ha dhaafo)
     if (!initialized) return;
 
+    // Segments waxay kuu sheegaysaa folder-ka aad ku jirto
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!session && !inAuthGroup) {
-      // Qof aan login ahayn -> Signin
-      router.replace('/(auth)/signin' as any);
+      // Haddii uusan login ahayn, geey Signin
+      router.replace('/(auth)/signin');
     } else if (session && inAuthGroup) {
-      // Qof login ah oo raba inuu Signin aado -> Home
+      // Haddii uu login yahay oo uu rabo inuu galo Signin, geey Home-ka
       router.replace('/(tabs)');
     }
   }, [session, initialized, segments]);
 
-  // MUHIIM: Inta uu hubinayo session-ka, ha tusin wax bog ah
   if (!initialized) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -56,8 +55,12 @@ export default function RootLayout() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(index)" />
+      {/* Halkan waa meesha ciladu ahayd. 
+         Kaliya ku qor magacyada folder-adaada (groups).
+      */}
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(auth)" />
+      {/* Haddii aad rabto inaad Modal ama wax kale ku darto, halkan geli */}
     </Stack>
   );
 }

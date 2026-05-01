@@ -5,9 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Linking // Waxaan ku daray kani si uu u furo WhatsApp/Email
-  ,
-
+  Linking,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -48,50 +46,30 @@ export default function ProfileScreen() {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) {
       setUser(authUser);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-      
+      const { data } = await supabase.from('profiles').select('*').eq('id', authUser.id).single();
       if (data) {
         setProfile(data);
-        if (data.role === 'owner') {
-          await fetchMyHouses(authUser.id);
-        }
+        if (data.role === 'owner') await fetchMyHouses(authUser.id);
       }
     }
   }
 
   async function fetchMyHouses(userId: string) {
-    const { data, error } = await supabase
-      .from('houses')
-      .select(`
-        *,
-        house_images(image_url)
-      `)
-      .eq('owner_id', userId)
-      .order('created_at', { ascending: false });
-
+    const { data } = await supabase.from('houses').select('*, house_images(image_url)').eq('owner_id', userId).order('created_at', { ascending: false });
     if (data) setMyHouses(data);
   }
 
   const handleLogout = async () => {
     Alert.alert("Ka bixid", "Ma hubtaa inaad ka baxayso app-ka?", [
       { text: "Maya" },
-      { text: "Haa", onPress: async () => {
-          await supabase.auth.signOut();
-          router.replace('/(auth)/signin'); 
-      }}
+      { text: "Haa", onPress: async () => { await supabase.auth.signOut(); router.replace('/(auth)/signin'); }}
     ]);
   };
 
-  // Funshinka xiriirka (WhatsApp)
   const contactViaWhatsApp = () => {
-    const phoneNumber = "252612642905"; // Halkaan geli lambarkaaga WhatsApp-ka
+    const phoneNumber = "252615940572";
     const message = "Asc HoyRaad, waxaan u baahnaa caawinaad.";
-    Linking.openURL(`whatsapp://send?phone=${phoneNumber}&text=${message}`).catch(() => {
+    Linking.openURL(`whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`).catch(() => {
         Alert.alert("Error", "WhatsApp kuma rakibna taleefankaaga.");
     });
   };
@@ -101,9 +79,7 @@ export default function ProfileScreen() {
       { text: "Maya" },
       { text: "Haa", onPress: async () => {
         const { error } = await supabase.from('houses').delete().eq('id', id);
-        if (!error) {
-            setMyHouses(prev => prev.filter(h => h.id !== id));
-        }
+        if (!error) setMyHouses(prev => prev.filter(h => h.id !== id));
       }}
     ]);
   };
@@ -124,16 +100,12 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <View style={styles.profileInfo}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
-            </Text>
+            <Text style={styles.avatarText}>{profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}</Text>
           </View>
           <View style={styles.infoText}>
             <Text style={styles.emailText} numberOfLines={1}>{profile?.full_name || user?.email}</Text>
             <View style={[styles.roleBadge, { backgroundColor: isOwner ? '#E8EAF6' : '#E8F5E9' }]}>
-                <Text style={[styles.userRole, { color: isOwner ? '#1A237E' : '#2E7D32' }]}>
-                    {isOwner ? 'Milkiile' : 'Kireyste'}
-                </Text>
+                <Text style={[styles.userRole, { color: isOwner ? '#1A237E' : '#2E7D32' }]}>{isOwner ? 'Milkiile' : 'Kireyste'}</Text>
             </View>
           </View>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
@@ -143,103 +115,70 @@ export default function ProfileScreen() {
 
         {isOwner && (
           <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNum}>{myHouses.length}</Text>
-              <Text style={styles.statLabel}>Guryahayga</Text>
-            </View>
-            <View style={[styles.statItem, { borderLeftWidth: 1, borderColor: '#eee' }]}>
-              <Text style={styles.statNum}>{totalViews}</Text>
-              <Text style={styles.statLabel}>(Views)</Text>
-            </View>
+            <View style={styles.statItem}><Text style={styles.statNum}>{myHouses.length}</Text><Text style={styles.statLabel}>Guryahayga</Text></View>
+            <View style={[styles.statItem, { borderLeftWidth: 1, borderColor: '#eee' }]}><Text style={styles.statNum}>{totalViews}</Text><Text style={styles.statLabel}>(Views)</Text></View>
           </View>
         )}
       </View>
 
-      <View style={styles.listSection}>
+      <ScrollView 
+        style={styles.listSection}
+        showsVerticalScrollIndicator={false}
+        // PADDING-KA HOOSE OO LA KORDHIYEY SI WHATSAPP UU U SOO MUUQDO
+        contentContainerStyle={{ paddingBottom: 150 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         {isOwner ? (
           <>
             <Text style={styles.sectionTitle}>Maamul Guryahaaga</Text>
-            <ScrollView 
-              showsVerticalScrollIndicator={false} 
-              contentContainerStyle={{ paddingBottom: 20 }}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            >
-              {myHouses.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Ionicons name="home-outline" size={60} color="#ccc" />
-                  <Text style={styles.emptyText}>Wali guri ma aadan soo gelin.</Text>
-                </View>
-              ) : (
-                myHouses.map((item) => (
-                  <View key={item.id} style={styles.houseCard}>
-                    <Image 
-                      source={{ uri: item.house_images?.[0]?.image_url || 'https://via.placeholder.com/150' }} 
-                      style={styles.houseImg} 
-                    />
-                    <View style={styles.houseDetails}>
-                      <View>
-                        <Text style={styles.houseTitle} numberOfLines={1}>{item.title}</Text>
-                        <View style={styles.viewRow}>
-                            <Ionicons name="eye-outline" size={14} color="#666" />
-                            <Text style={styles.viewCount}>{item.views || 0} views</Text>
-                        </View>
-                      </View>
-                      
-                      <View style={styles.cardFooter}>
-                        <Text style={styles.housePrice}>${item.price}/mo</Text>
-                        <View style={styles.actionButtons}>
-                          <TouchableOpacity 
-                            onPress={() => router.push(`/edit-house/${item.id}`)}
-                            style={styles.iconBtn}
-                          >
-                            <Ionicons name="create-outline" size={20} color="#1A237E" />
-                          </TouchableOpacity>
-                          <TouchableOpacity 
-                            onPress={() => deleteHouse(item.id)}
-                            style={[styles.iconBtn, { marginLeft: 15 }]}
-                          >
-                            <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                          </TouchableOpacity>
-                        </View>
+            {myHouses.length === 0 ? (
+              <View style={styles.emptyState}><Ionicons name="home-outline" size={60} color="#ccc" /><Text style={styles.emptyText}>Wali guri ma aadan soo gelin.</Text></View>
+            ) : (
+              myHouses.map((item) => (
+                <View key={item.id} style={styles.houseCard}>
+                  <Image source={{ uri: item.house_images?.[0]?.image_url || 'https://via.placeholder.com/150' }} style={styles.houseImg} />
+                  <View style={styles.houseDetails}>
+                    <View>
+                      <Text style={styles.houseTitle} numberOfLines={1}>{item.title}</Text>
+                      <View style={styles.viewRow}><Ionicons name="eye-outline" size={14} color="#666" /><Text style={styles.viewCount}>{item.views || 0} views</Text></View>
+                    </View>
+                    <View style={styles.cardFooter}>
+                      <Text style={styles.housePrice}>${item.price}/mo</Text>
+                      <View style={styles.actionButtons}>
+                        <TouchableOpacity onPress={() => router.push(`/edit-house/${item.id}`)} style={styles.iconBtn}><Ionicons name="create-outline" size={20} color="#1A237E" /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => deleteHouse(item.id)} style={[styles.iconBtn, { marginLeft: 15 }]}><Ionicons name="trash-outline" size={20} color="#FF3B30" /></TouchableOpacity>
                       </View>
                     </View>
                   </View>
-                ))
-              )}
-            </ScrollView>
+                </View>
+              ))
+            )}
           </>
         ) : (
           <View style={styles.customerView}>
              <Text style={styles.sectionTitle}>Xulashada Kireystaha</Text>
-             
              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('./favorites')}>
-                <View style={[styles.menuIcon, { backgroundColor: '#FFF0F0' }]}>
-                    <Ionicons name="heart" size={22} color="#FF3B30" />
-                </View>
+                <View style={[styles.menuIcon, { backgroundColor: '#FFF0F0' }]}><Ionicons name="heart" size={22} color="#FF3B30" /></View>
                 <Text style={styles.menuText}>Guryaha aan jeclaystay</Text>
                 <Ionicons name="chevron-forward" size={20} color="#CCC" />
              </TouchableOpacity>
-
              <TouchableOpacity style={styles.menuItem}>
-                <View style={[styles.menuIcon, { backgroundColor: '#F0F4FF' }]}>
-                    <Ionicons name="settings" size={22} color="#1A237E" />
-                </View>
+                <View style={[styles.menuIcon, { backgroundColor: '#F0F4FF' }]}><Ionicons name="settings" size={22} color="#1A237E" /></View>
                 <Text style={styles.menuText}>Beddel Profile-ka</Text>
-                <Ionicons name="chevron-forward" size={20} color="#CCC" />
-             </TouchableOpacity>
-
-             {/* QAYBTA CUSUB: Nala Soo Xiriir */}
-             <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Caawinaad</Text>
-             <TouchableOpacity style={styles.menuItem} onPress={contactViaWhatsApp}>
-                <View style={[styles.menuIcon, { backgroundColor: '#E8F5E9' }]}>
-                    <Ionicons name="logo-whatsapp" size={22} color="#2E7D32" />
-                </View>
-                <Text style={styles.menuText}>Nala soo xiriir (WhatsApp)</Text>
                 <Ionicons name="chevron-forward" size={20} color="#CCC" />
              </TouchableOpacity>
           </View>
         )}
-      </View>
+
+        <View style={{ marginTop: 20 }}>
+            <Text style={styles.sectionTitle}>Caawinaad & Taageero</Text>
+            <TouchableOpacity style={styles.menuItem} onPress={contactViaWhatsApp}>
+                <View style={[styles.menuIcon, { backgroundColor: '#E8F5E9' }]}><Ionicons name="logo-whatsapp" size={22} color="#2E7D32" /></View>
+                <Text style={styles.menuText}>Nala soo xiriir (WhatsApp)</Text>
+                <Ionicons name="chevron-forward" size={20} color="#CCC" />
+            </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -247,7 +186,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FD' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { backgroundColor: '#fff', padding: 25, borderBottomLeftRadius: 35, borderBottomRightRadius: 35, elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
+  header: { backgroundColor: '#fff', padding: 25, borderBottomLeftRadius: 35, borderBottomRightRadius: 35, elevation: 3 },
   profileInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
   avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#1A237E', justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
@@ -260,7 +199,7 @@ const styles = StyleSheet.create({
   statItem: { flex: 1, alignItems: 'center' },
   statNum: { fontSize: 20, fontWeight: 'bold', color: '#1A237E' },
   statLabel: { fontSize: 12, color: '#666' },
-  listSection: { flex: 1, padding: 20 },
+  listSection: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 15 },
   houseCard: { backgroundColor: '#fff', borderRadius: 20, padding: 10, flexDirection: 'row', marginBottom: 15, elevation: 2 },
   houseImg: { width: 85, height: 85, borderRadius: 15 },

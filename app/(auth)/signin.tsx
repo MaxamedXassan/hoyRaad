@@ -32,7 +32,7 @@ export default function SigninScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push("/(auth)/signup")}>
-        <Text style={styles.footerText}>Ma laha account? <Text style={styles.linkText}>Isku diiwaangeli</Text></Text>
+        <Text style={styles.footerText}>Ma lihid account? <Text style={styles.linkText}>Iska diiwaangeli halkan</Text></Text>
       </TouchableOpacity>
     </View>
   );

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as NavigationBar from 'expo-navigation-bar'; // Kani waa kan qarinaya badhamada hoose
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, StatusBar, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function TabLayout() {
@@ -10,23 +11,27 @@ export default function TabLayout() {
 
   useEffect(() => {
     getUserRole();
+
+    // 1. Qari Saacadda Sare
+    StatusBar.setHidden(true);
+
+    // 2. Qari Badhamada Hoose (Samsung/Android Navigation Bar)
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync("hidden"); // Wuu qarinayaa
+      NavigationBar.setBehaviorAsync("inset-touch"); // Markuu qofka taabto ayuu soo baxayaa, ka dibna iskiis u qarsoomayaa
+    }
   }, []);
 
   async function getUserRole() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (user) {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single();
-        
-        if (data) {
-          setRole(data.role);
-          // console.log("Qofka doorkiisu waa:", data.role); // Kani waa tijaabo (Debug)
-        }
+        if (data) setRole(data.role);
       }
     } catch (err) {
       console.error(err);
@@ -35,52 +40,66 @@ export default function TabLayout() {
     }
   }
 
-  // Inta ay xogtu imanayso, ha tusin Tabs-ka si uusan qalad u dhicin
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#1A237E" />
       </View>
     );
   }
 
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: '#1A237E' }}>
-      
-      {/* Home - Qof kasta waa u furan yahay */}
+    <Tabs 
+      screenOptions={{ 
+        tabBarActiveTintColor: '#1A237E',
+        headerShown: false,
+        tabBarStyle: { 
+          height: 65,
+          paddingBottom: 10,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          position: 'absolute' // Waxay ka dhigaysaa inuu kor ka yimaado background-ka
+        } 
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          headerShown: false,
-          title: 'HoyRaad',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={24} color={color} />,
         }}
       />
 
-      {/* favorites - Kireystaha oo KALIYA (renter) */}
       <Tabs.Screen
         name="favorites"
         options={{
-          headerShown: false,
-          title: 'Baar Guryaha',
           tabBarLabel: 'Favorites',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "heart" : "heart-outline"} size={24} color={color} />
           ),
-          // Halkan ayaa ah sirta: Haddii uu yahay owner, qari tab-kan
           href: role === 'renter' ? '/favorites' : null,
         }}
       />
 
-      {/* Add House - Milkiilaha oo KALIYA (owner) */}
       <Tabs.Screen
         name="add-house"
         options={{
-          title: 'Guri Ku Dar',
-          tabBarLabel: 'Add',
-          tabBarIcon: ({ color }) => <Ionicons name="add-circle" size={28} color={color} />,
-          // Halkan ayaa ah sirta: Haddii uu yahay renter, qari tab-kan
+          tabBarLabel: '', // Magaca waan ka saaray si badhanka u weynaado
+          tabBarIcon: ({ color }) => (
+            <View style={{
+              backgroundColor: '#1A237E',
+              width: 50,
+              height: 50,
+              borderRadius: 25,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: -15, // Kor u yara qaad badhanka
+              borderWidth: 4,
+              borderColor: '#F8F9FD', // Midabka background-ka app-kaaga
+            }}>
+              <Ionicons name="add" size={35} color="#FFF" />
+            </View>
+          ),
           href: role === 'owner' ? '/add-house' : null,
         }}
       />
@@ -88,9 +107,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="person-outline" size={24} color={color} />,
         }}
       />
     </Tabs>

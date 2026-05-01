@@ -183,7 +183,7 @@ export default function AddHouseScreen() {
           <Text style={styles.sectionLabel}>Macluumaadka Guriga</Text>
           
           <TextInput 
-            placeholder="Magaca Guriga (Title)" 
+            placeholder="Magaca Guriga (villa/ apartment)" 
             style={styles.input} 
             value={title} 
             onChangeText={setTitle} 
