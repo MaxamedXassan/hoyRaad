@@ -2,7 +2,7 @@
   "expo": {
     "name": "HoyRaad",
     "slug": "HoyRaad",
-    "version": "1.0.0",
+    "version": "1.1.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hoyraad",
@@ -20,7 +20,8 @@
       },
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.HoyRaad"
+      "package": "com.mohamed.HoyRaad",
+      "verssionCode": 7
     },
     "web": {
       "output": "static",
@@ -44,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b69f7b48-8e55-4963-ba75-75b8e9941965"
+      }
     }
   }
 }
