@@ -2,7 +2,7 @@
   "expo": {
     "name": "HoyRaad",
     "slug": "HoyRaad",
-    "version": "1.1.4",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hoyraad",
@@ -21,7 +21,7 @@
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
       "package": "com.mohamed.HoyRaad",
-      "verssionCode": 7
+      "versionCode": 7
     },
     "web": {
       "output": "static",
