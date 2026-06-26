@@ -8,7 +8,7 @@ export default function RootLayout() {
   const [initialized, setInitialized] = useState(false);
   const segments = useSegments();
   const router = useRouter();
-
+// hasasjhjsaj
   useEffect(() => {
     // 1. Hubi qofka markuu app-ka soo fariisto
     const checkSession = async () => {
