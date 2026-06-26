@@ -21,7 +21,7 @@
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
       "package": "com.mohamed.HoyRaad",
-      "versionCode": 7
+      "versionCode": 8
     },
     "web": {
       "output": "static",
