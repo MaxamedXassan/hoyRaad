@@ -21,7 +21,7 @@
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
       "package": "com.mohamed.HoyRaad",
-      "versionCode": 8
+      "versionCode": 7
     },
     "web": {
       "output": "static",
@@ -40,7 +40,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
