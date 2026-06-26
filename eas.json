@@ -11,10 +11,7 @@
       "distribution": "internal"
     },
     "production": {
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://qvvokoqxrpuicgjyoqbv.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2dm9rb3F4cnB1aWNnanlvcWJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTI1ODAsImV4cCI6MjA5MjA4ODU4MH0.zsejnv8CjMu3BqEPqX8H8rUghfO13q0mjJ-p8PcnPHA"
-      }
+      
     }
   },
   "submit": {
